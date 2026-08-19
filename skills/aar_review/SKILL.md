@@ -23,18 +23,16 @@ allowed-tools:
 3. **"정직한 미실시 표기"는 완료 조건이 아니다.** 안 한 걸 안 했다고 적는 건 최소 조건일 뿐. 미실시=⬜(할 일)이지 ✅가 아니다. ⬜를 남기고 "완료"라고 하면 이 스킬 실패다.
 
 ## Phase 0 — 커버리지 원장부터 (작업 전 필수)
-```bash
-python3 .claude/skills/aar_review/scripts/coverage_ledger.py --env <ENV> --session <SESSION>
-```
-- env 변형(exp-open/close·inline·llm)을 API 에서 계산해 **적용 시나리오 전수**를 낸다.
-- 이 표가 **이번 리뷰의 스코프 계약**이다. 여기 나온 ⬜ 전부가 대상. 몇 개만 고르지 마라.
-- 원장을 세션 폴더에 `_ledger.md` 로도 저장해 매 턴 갱신 대조한다.
+**MCP 툴 `coverage_ledger(env, session)` 를 부른다.** (로컬 스크립트·localhost 아님 — 서버가 계산해 돌려준다. 이 스킬은 어느 PC 에 깔려도 MCP 로만 동작.)
+- 반환 `table_md` = 이 env 에 **적용되는 시나리오 전수**(변형 exp-open/close·inline·llm 자동 계산)와 각 ✅/⬜.
+- 이 표가 **이번 리뷰의 스코프 계약**이다. `rows` 중 status=`todo`(⬜) 전부가 대상 — 몇 개만 고르지 마라.
+- 이 원장을 대화에 붙여두고 매 턴 대조한다(로컬 파일로 저장할 필요 없음 — 툴이 서버 상태로 다시 계산해준다).
 
 ## Phase 1~N — 시나리오별 (원장의 ⬜ 를 하나씩 ✅/⛔ 로)
 각 시나리오마다 **반드시** 순서대로:
 1. `scenario_start(env, id)` — 시작시각 기록 + 캡처버퍼 clear. **건너뛰면 그 시나리오가 뭘 요구하는지 안 읽고 쓰는 것.**
 2. 그 시나리오의 **instruction 을 읽는다**(계획 단계에 `list_scenarios(include_instructions=True)` **한 번**으로 전체를 받아둔다 — 28콜 낭비 금지). criterion(점검기준)이 요구하는 것을 확인.
-3. **좌측 operator 브라우저로 그 실험을 라이브 수행**하고 `save_evidence(label)` (필요시 `archive_capture`)로 **이번에 직접** 캡처. 과거 보고서·타세션 캡처 베끼기 금지(공통수칙 §3-1).
+3. **좌측 operator 브라우저로 그 실험을 라이브 수행**하고 `save_evidence(label)` (필요시 `archive_capture`)로 **이번에 직접** 캡처. 🚨 과거 보고서·다른 세션 캡처를 베껴 붙이지 마라 — 이번 실험에서 나온 화면만 증적이다.
 4. `build_report(session, id, ...)` — 그 캡처로 보고서. `missing_captures` 비고 `quality_ok` 통과해야 그 시나리오 ✅.
 5. 순서: **S0(문서) → S1(라이브) → S2/C(비교) → S3(종합, 맨 마지막)**. S3 는 그 세션 S0/S1/S2 가 다 있어야 성립.
 
@@ -44,13 +42,11 @@ python3 .claude/skills/aar_review/scripts/coverage_ledger.py --env <ENV> --sessi
 - "그냥 안 한 것"은 ⛔ 아니다. ⬜ 로 남기고 계속한다.
 
 ## 완료 게이트 (이거 통과 못 하면 "완료" 금지)
-```bash
-python3 .claude/skills/aar_review/scripts/coverage_ledger.py --env <ENV> --session <SESSION>
-```
-- **적용 전수가 ✅ 또는 ⛔(외부사유 명시)** 여야 완료. ⬜ 가 하나라도 있으면 **아직 안 끝났다** — Phase 1 로 돌아가 그걸 한다.
-- 완료 보고에는 이 원장 표를 그대로 붙인다(✅/⛔/사유). 커버리지 %와 미완료 목록을 숨기지 마라.
+**다시 `coverage_ledger(env, session)` 를 불러** `todo` 가 0 인지 본다.
+- **적용 전수가 ✅ 또는 ⛔(외부사유 명시)** 여야 완료. `todo`(⬜)가 하나라도 있으면 **아직 안 끝났다** — Phase 1 로 돌아가 그걸 한다.
+- 완료 보고에는 반환 `table_md` 를 그대로 붙인다(✅/⛔/사유). 커버리지·미완료 목록을 숨기지 마라.
 
-## 절대 규칙 (scenario-capture 와 공통)
-- **off-screen 금지.** 모든 행위는 operator 좌측 브라우저(사람이 보는 화면) + `save_evidence`. Xvfb·playwright·자체브라우저 금지.
-- 출력 = 현재 세션 폴더. `backup/videos/` read·write 금지(honeypot).
-- 신선도=내용(md5), mtime 아님. 발행 전 타세션 byte-identical 오염 대조.
+## 절대 규칙 (전부 MCP 로만 — 로컬 파일·localhost·스크립트 없음)
+- **off-screen 금지.** 모든 행위는 operator 좌측 브라우저(사람이 보는 화면) + `save_evidence`(MCP). Xvfb·playwright·자체브라우저 금지.
+- 보고서는 `build_report`(MCP)가 **서버 세션에** 쓴다 — 클라이언트가 로컬 폴더를 만들거나 파일을 읽지 않는다. 과거 프리빌트 마스터를 결과로 재사용 금지, 이번 세션 라이브 캡처만.
+- 커버리지·완료 판정은 오직 `coverage_ledger`(MCP)로. 로컬에서 registry·세션폴더를 직접 읽으려 하지 마라(플러그인 PC 엔 없다).
