@@ -28,13 +28,17 @@ allowed-tools:
 - 이 표가 **이번 리뷰의 스코프 계약**이다. `rows` 중 status=`todo`(⬜) 전부가 대상 — 몇 개만 고르지 마라.
 - 이 원장을 대화에 붙여두고 매 턴 대조한다(로컬 파일로 저장할 필요 없음 — 툴이 서버 상태로 다시 계산해준다).
 
+## 🖥️ BROWSER SPLIT — 시나리오 그룹으로 브라우저를 가른다 (제일 먼저 판단)
+🚨 시나리오마다 **어느 브라우저로 할지 먼저 정한다.** 안 가르면 S0 을 operator 서버캡처로 잘못 돌린다(화면이 안 움직임 = off-screen 위반).
+- **S0 (문서·공개웹 리서치)** → **Claude 자신의 인앱 브라우저**(native navigate/goto)로 공식문서·벤더 사이트를 **사람이 보는 앞에서** 조사한다. 프록시 캡처가 필요 없으니 `scenario_start`·operator `browser_*`·`save_evidence` **쓰지 마라**(그건 화면 안 움직이는 off-screen 서버캡처다). 근거 = 인앱 브라우저로 직접 본 화면.
+- **S1~ (라이브 제품 실증)** → **operator 좌측 브라우저** + `scenario_start` + `save_evidence`. 제품 트래픽은 **검사 프록시를 통과해야** 하는데 인앱 브라우저는 그 뒤에 없으므로 반드시 operator.
+
 ## Phase 1~N — 시나리오별 (원장의 ⬜ 를 하나씩 ✅/⛔ 로)
-각 시나리오마다 **반드시** 순서대로:
-1. `scenario_start(env, id)` — 시작시각 기록 + 캡처버퍼 clear. **건너뛰면 그 시나리오가 뭘 요구하는지 안 읽고 쓰는 것.**
-2. 그 시나리오의 **instruction 을 읽는다**(계획 단계에 `list_scenarios(include_instructions=True)` **한 번**으로 전체를 받아둔다 — 28콜 낭비 금지). criterion(점검기준)이 요구하는 것을 확인.
-3. **좌측 operator 브라우저로 그 실험을 라이브 수행**하고 `save_evidence(label)` (필요시 `archive_capture`)로 **이번에 직접** 캡처. 🚨 과거 보고서·다른 세션 캡처를 베껴 붙이지 마라 — 이번 실험에서 나온 화면만 증적이다.
-4. `build_report(session, id, ...)` — 그 캡처로 보고서. `missing_captures` 비고 `quality_ok` 통과해야 그 시나리오 ✅.
-5. 순서: **S0(문서) → S1(라이브) → S2/C(비교) → S3(종합, 맨 마지막)**. S3 는 그 세션 S0/S1/S2 가 다 있어야 성립.
+1. 계획 단계에 `list_scenarios(include_instructions=True)` **한 번**으로 전체 instruction 을 받아 criterion(점검기준) 확인(N콜 낭비 금지).
+2. **S1~ 만** `scenario_start(env, id)` 로 시작(시작시각 기록 + 캡처버퍼 clear). **S0 은** scenario_start 없이 인앱 브라우저로 바로 조사.
+3. 위 BROWSER SPLIT 대로 라이브 수행 + 증적 확보(S0=인앱 화면, S1~=`save_evidence`/`archive_capture`). 🚨 과거 보고서·다른 세션 캡처 베끼기 금지 — 이번에 본 화면만.
+4. `build_report(session, id, ...)` — 그 근거로 보고서. `missing_captures` 비고 `quality_ok` 통과해야 ✅.
+5. 순서: **S0(인앱 문서리서치) → S1(operator 라이브) → S2/C(비교) → S3(종합, 맨 마지막 — S3-1·S3-2 둘 다)**. S3 는 그 세션 S0/S1/S2 가 다 있어야 성립.
 
 ## ⛔ (막힘) 은 외부 사유가 있을 때만
 - 관리자 콘솔 로그인 필요(비번 입력은 안 하는 동작) 같은 **내가 못 넘는 벽**만 ⛔. 사유를 원장·보고서에 명시하고 **사용자에게 그 로그인을 요청**한다.
