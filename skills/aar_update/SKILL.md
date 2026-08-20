@@ -22,7 +22,7 @@ allowed-tools:
 
 ## 절차
 1. **기준선 읽기** — 4트리 각각 `get_tree(tree_id)` (menu·session·settings·retention). "지난번엔 뭐가 있었나".
-2. **제품 재관찰** — operator 좌측 브라우저로 제품을 훑어 **바뀐 지점**을 찾는다(새 메뉴·사라진 항목·값 변경·새 세션형태·세팅 기본값 변경·보존정책 변경).
+2. **제품 재관찰** — claude-for-chrome 로 제품을 훑어 **바뀐 지점**을 찾는다(새 메뉴·사라진 항목·값 변경·새 세션형태·세팅 기본값 변경·보존정책 변경).
 3. **트리 델타 반영** — 바뀐 앵커에만 `update_tree(tree_id, node_path=[바뀐 지점], patch=[그 아래 현재])`. 삭제 판정은 앵커 서브트리 안에서만.
 4. **무엇이 바뀌었나 기록** — `tree_changelog(tree_id, since=지난추적일)` 로 이번 델타를 시간축으로 확인(added/−removed/~changed).
 5. **영향 보고서 갱신** — 그 변화가 통제/동작에 영향 있으면(예: 새 egress 경로, 새 관리자 토글, 보존기간 변경) **해당 시나리오만** 재실증(`scenario_start`→라이브 캡처→`build_report`) + 그 노드에 `tag` 로 보고서 재연결. 변화 없는 시나리오는 건드리지 마라.
@@ -35,6 +35,6 @@ allowed-tools:
 - **retention** — 데이터 보존/삭제 정책이 바뀌었나.
 
 ## 절대 규칙
-- off-screen 금지 — operator 좌측 브라우저로만. 본 것만(추측 노드 금지).
+- off-screen 금지 — claude-for-chrome 로 내가 본 것만(추측 노드 금지). 캡처는 내 화면을 떠서 /api/v1/evidence 로 POST.
 - 로그인 뒤 화면은 로그인 필요 → blocked + 사유, 사용자에게 요청.
 - 신선도=내용(md5), mtime 아님. 갱신 보고서도 이번 라이브 캡처만.

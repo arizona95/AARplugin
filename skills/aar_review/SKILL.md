@@ -28,17 +28,18 @@ allowed-tools:
 - 이 표가 **이번 리뷰의 스코프 계약**이다. `rows` 중 status=`todo`(⬜) 전부가 대상 — 몇 개만 고르지 마라.
 - 이 원장을 대화에 붙여두고 매 턴 대조한다(로컬 파일로 저장할 필요 없음 — 툴이 서버 상태로 다시 계산해준다).
 
-## 🖥️ BROWSER SPLIT — 시나리오 그룹으로 브라우저를 가른다 (제일 먼저 판단)
-🚨 시나리오마다 **어느 브라우저로 할지 먼저 정한다.** 안 가르면 S0 을 operator 서버캡처로 잘못 돌린다(화면이 안 움직임 = off-screen 위반).
-- **S0 (문서·공개웹 리서치)** → **Claude 자신의 인앱 브라우저**(native navigate/goto)로 공식문서·벤더 사이트를 **사람이 보는 앞에서** 조사한다. 프록시 캡처가 필요 없으니 `scenario_start`·operator `browser_*`·`save_evidence` **쓰지 마라**(그건 화면 안 움직이는 off-screen 서버캡처다). 근거 = 인앱 브라우저로 직접 본 화면.
-- **S1~ (라이브 제품 실증)** → **operator 좌측 브라우저** + `scenario_start` + `save_evidence`. 제품 트래픽은 **검사 프록시를 통과해야** 하는데 인앱 브라우저는 그 뒤에 없으므로 반드시 operator.
+## 🖥️ 브라우저·캡처 = claude-for-chrome 하나 (제일 먼저)
+모든 브라우징·캡처는 **claude-for-chrome**(mcp__claude-in-chrome__*) 로 한다 — 서버엔 브라우저가 없다(operator·인앱·서버 대리캡처 폐기). `browser_mode` 로 현재 백엔드 확인.
+- **S0 (공개 문서 리서치)** = claude-for-chrome 로 공식문서·벤더 사이트를 직접 열고 스크롤해 **실제로 값을 확인**한다. 값 판독은 `get_page_text`(픽셀 눈으로 읽기보다 오독 없음).
+- **S1~ (env 실증)** = claude-for-chrome 로 **콘솔만** 열어 env 트리→user-window-pc→RDP(canvas) 로드→그 PC 조작. 제품 트래픽은 그 env(프록시 뒤)를 지나므로 콘솔 flow 뷰로 확인.
+- **캡처 = 내가 본 화면을 내가 떠서 서버로 POST.** `save_evidence(label)` 이 레시피(캡처법 + POST 대상 `/api/v1/evidence`)를 준다: RDP=canvas 크롭 1920px, 일반웹=chrome `computer(screenshot)`, 그 dataURL 을 `javascript_tool` fetch 로 POST. **서버가 대신 안 찍는다.**
 
 ## Phase 1~N — 시나리오별 (원장의 ⬜ 를 하나씩 ✅/⛔ 로)
 1. 계획 단계에 `list_scenarios(include_instructions=True)` **한 번**으로 전체 instruction 을 받아 criterion(점검기준) 확인(N콜 낭비 금지).
-2. **S1~ 만** `scenario_start(env, id)` 로 시작(시작시각 기록 + 캡처버퍼 clear). **S0 은** scenario_start 없이 인앱 브라우저로 바로 조사.
-3. 위 BROWSER SPLIT 대로 라이브 수행 + 증적 확보(S0=인앱 화면, S1~=`save_evidence`/`archive_capture`). 🚨 과거 보고서·다른 세션 캡처 베끼기 금지 — 이번에 본 화면만.
-4. `build_report(session, id, ...)` — 그 근거로 보고서. `missing_captures` 비고 `quality_ok` 통과해야 ✅.
-5. 순서: **S0(인앱 문서리서치) → S1(operator 라이브) → S2/C(비교) → S3(종합, 맨 마지막 — S3-1·S3-2 둘 다)**. S3 는 그 세션 S0/S1/S2 가 다 있어야 성립.
+2. `scenario_start(env, id)` — env 실증(S1~) 시작시각 기록. S0 문서 리서치는 scenario_start 없이 claude-for-chrome 로 바로.
+3. claude-for-chrome 로 라이브 수행 → **내가 본 화면을 떠서 `/api/v1/evidence` 로 POST**(`save_evidence(label)` 레시피대로). 값은 `get_page_text`. 🚨 과거 보고서·다른 세션 캡처 베끼기 금지 — 이번에 본 화면만.
+4. `build_report(session, id, ...)` — 그 근거(POST 한 shot label)로 보고서. `quality_ok` 통과해야 ✅.
+5. 순서: **S0(문서) → S1(env 실증) → S2/C(비교) → S3(종합, 맨 마지막 — S3-1·S3-2 둘 다)**. S3 는 그 세션 S0/S1/S2 가 다 있어야 성립.
 
 ## ⛔ (막힘) 은 외부 사유가 있을 때만
 - 관리자 콘솔 로그인 필요(비번 입력은 안 하는 동작) 같은 **내가 못 넘는 벽**만 ⛔. 사유를 원장·보고서에 명시하고 **사용자에게 그 로그인을 요청**한다.
@@ -51,6 +52,6 @@ allowed-tools:
 - 완료 보고에는 반환 `table_md` 를 그대로 붙인다(✅/⛔/사유). 커버리지·미완료 목록을 숨기지 마라.
 
 ## 절대 규칙 (전부 MCP 로만 — 로컬 파일·localhost·스크립트 없음)
-- **off-screen 금지.** 모든 행위는 operator 좌측 브라우저(사람이 보는 화면) + `save_evidence`(MCP). Xvfb·playwright·자체브라우저 금지.
+- **off-screen 금지.** 모든 캡처는 **claude-for-chrome 로 내가 본 화면**을 떠서 `/api/v1/evidence` 로 POST. 서버 대리캡처·Xvfb·playwright 금지.
 - 보고서는 `build_report`(MCP)가 **서버 세션에** 쓴다 — 클라이언트가 로컬 폴더를 만들거나 파일을 읽지 않는다. 과거 프리빌트 마스터를 결과로 재사용 금지, 이번 세션 라이브 캡처만.
 - 커버리지·완료 판정은 오직 `coverage_ledger`(MCP)로. 로컬에서 registry·세션폴더를 직접 읽으려 하지 마라(플러그인 PC 엔 없다).
