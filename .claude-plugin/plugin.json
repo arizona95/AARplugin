@@ -1,7 +1,7 @@
 {
   "name": "AARplugin",
-  "version": "1.0.5",
-  "description": "AgentAutoReview — AI 앱 보안 리뷰 워크플로 스킬 3종 + 리모트 MCP(AARmcp). /aar_review(적용 시나리오 전수 실증) · /aar_update(주간 SaaS 추적, 트리·보고서 델타 갱신) · /aar_fix(자기 스킬·가이드 점검→개편, edit_guidance 호출). 설치하면 스킬과 AARmcp 도구가 함께, 도구는 서버측 자동 업데이트.",
+  "version": "1.0.6",
+  "description": "AgentAutoReview — AI 앱 보안 리뷰 워크플로 스킬 3종 + 리모트 MCP(AARmcp). /aar_review(적용 시나리오 전수 실증) · /aar_update(주간 SaaS 추적, 트리·보고서 델타 갱신) · /aar_fix(자기 스킬·가이드 점검→개편, edit_guidance 호출). 리뷰 발행 직전 독립 검증 서브에이전트 aar-reviewer(대상=3rd-party·Enterprise tier·커버리지·증거 게이트). 설치하면 스킬·에이전트와 AARmcp 도구가 함께, 도구는 서버측 자동 업데이트.",
   "author": {
     "name": "AgentReview"
   },
