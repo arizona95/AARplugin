@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "AARplugin",
-      "source": ".",
+      "source": "./",
       "version": "1.0.7",
       "description": "보안 리뷰 워크플로 스킬 3종(/aar_review·/aar_update·/aar_fix) + 리모트 MCP(AARmcp)."
     }
