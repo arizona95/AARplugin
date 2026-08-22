@@ -39,7 +39,7 @@ allowed-tools:
 1. 계획 단계에 `list_scenarios(include_instructions=True)` **한 번**으로 전체 instruction 을 받아 criterion(점검기준) 확인(N콜 낭비 금지).
 2. `scenario_start(env, id)` — env 실증(S1~) 시작시각 기록. S0 문서 리서치는 scenario_start 없이 claude-for-chrome 로 바로.
 3. claude-for-chrome 로 라이브 수행 → **내가 본 화면을 떠서 `/api/v1/evidence` 로 POST**(`save_evidence(label)` 레시피대로). 값은 `get_page_text`. 🚨 과거 보고서·다른 세션 캡처 베끼기 금지 — 이번에 본 화면만.
-4. `build_report(session, id, ...)` — 그 근거(POST 한 shot label)로 보고서. `quality_ok` 통과해야 ✅.
+4. 보고서 생성 — **S0/S1/S2 는 `html_report(session, id, ...)`**(그 근거=POST 한 shot label 로 조립, `quality_ok` 통과해야 ✅). **S3 종합(S3-1·S3-2)은 `docx_report(session, scenario='S3-1'|'S3-2', ...)`** — 서버가 python-docx 로 정식 docx(+html)를 렌더한다(S3-1.md/S3-2.md 지시대로 8영역/위반교정 표를 blocks 로 넘겨라). 🚫 S3 를 html_report(build_report)로 때우지 마라 — docx 산출물 갈음은 미완이다.
 5. 순서: **S0(문서) → S1(env 실증) → S2/C(비교) → S3(종합, 맨 마지막 — S3-1·S3-2 둘 다)**. S3 는 그 세션 S0/S1/S2 가 다 있어야 성립.
 
 ## ⛔ (막힘) 은 외부 사유가 있을 때만
@@ -59,5 +59,5 @@ allowed-tools:
 
 ## 절대 규칙 (전부 MCP 로만 — 로컬 파일·localhost·스크립트 없음)
 - **off-screen 금지.** 모든 캡처는 **claude-for-chrome 로 내가 본 화면**을 떠서 `/api/v1/evidence` 로 POST. 서버 대리캡처·Xvfb·playwright 금지.
-- 보고서는 `build_report`(MCP)가 **서버 세션에** 쓴다 — 클라이언트가 로컬 폴더를 만들거나 파일을 읽지 않는다. 과거 프리빌트 마스터를 결과로 재사용 금지, 이번 세션 라이브 캡처만.
+- 보고서는 `html_report`/`docx_report`(MCP)가 **서버 세션에** 쓴다 — 클라이언트가 로컬 폴더를 만들거나 파일을 읽지 않는다(로컬 문서스킬·OOXML 발동 아님). 과거 프리빌트 마스터를 결과로 재사용 금지, 이번 세션 라이브 캡처만.
 - 커버리지·완료 판정은 오직 `coverage_ledger`(MCP)로. 로컬에서 registry·세션폴더를 직접 읽으려 하지 마라(플러그인 PC 엔 없다).

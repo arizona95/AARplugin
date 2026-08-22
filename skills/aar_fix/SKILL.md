@@ -8,6 +8,7 @@ description: |
   고쳐", "왜 자꾸 같은 실수", "aar 고쳐", "가이드 점검" 일 때.
 allowed-tools:
   - Read
+  - Task
 ---
 
 # AAR 자기 개편 — 대화에서 배운 걸 규범에 박기 (aar_fix)
@@ -58,6 +59,13 @@ durable 규범이라 함부로 안 쓴다. **무엇을 → 무엇으로 + 근거
 ## 6) 검증
 고친 뒤 `review_playbook()`·`list_guidance()` 를 다시 읽어 (a) 지적이 실제로 막히는지, (b) 새 모순을 안
 만들었는지 확인. 바꾼 것을 표로 보고: **어느 가이드 / 무엇→무엇 / 이 대화의 어느 근거**.
+
+## 7) 마무리 = 대 전제 감사 (`aar-compounder` 서브에이전트) 🚨 필수
+이 대화용 수정을 끝냈으면, **마무리로 `aar-compounder` 를 반드시 부른다** — `Task(subagent_type="aar-compounder", …)`.
+이건 전술(이 대화→특정 수정)을 넘어 **가이드 코퍼스 전체의 대 전제**를 독립 감사한다:
+① 특정 SaaS 치우침 잔존 ② 타겟 정확성(정확히 그 대상인지 되묻게 하나) ③ 중복·장황(→간결) ④ 통찰(원리 vs 하드코딩) ⑤ 방향 일관성(모순 없나).
+- `aar-compounder` 가 낸 결함목록은 **대전제 위반**이다. 그걸 (확인 게이트 거쳐) `edit_guidance`/`edit_scenario` 로 반영하고, **다시 `aar-compounder` 를 불러 `PASS` 날 때까지** 반복한다.
+- `PASS` 가 나야 aar_fix 완료. 결함을 남기고 끝내지 마라. (compounder 는 읽기전용이라 스스로 안 고친다 — 반영은 이 스킬이.)
 
 ## 절대 규칙
 - **로컬 파일 금지** — 모든 읽기·쓰기는 MCP 툴(`edit_guidance`·`edit_scenario`·`review_playbook`·
